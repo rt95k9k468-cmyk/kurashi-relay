@@ -1,0 +1,13 @@
+{
+  "name": "kurashi-relay",
+  "private": true,
+  "description": "くらしノートの中継所（ショートカットが置き、アプリが受け取る郵便受け）",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "node worker.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  },
+  "type": "module"
+}

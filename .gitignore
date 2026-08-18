@@ -1,0 +1,6 @@
+# 本物の合言葉。example のほうだけを配ります。
+.dev.vars
+
+# wrangler の作業場（ローカルのKVの中身もここに入ります）
+.wrangler/
+node_modules/
