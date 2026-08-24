@@ -68,7 +68,14 @@ export default {
       if (!body.trim()) {
         return new Response("空です", { status: 400, headers: CORS });
       }
+      /* 郵便受けは一通しか持てません。取りに来る前に次の便が来ると、
+         前の便は読まれないまま消えます——普段は困りません（毎朝一回だけ
+         なので）が、二重に走らせたときは静かにデータを失うので、
+         「前の便がまだ残っていた」ことだけ小さな印で覚えておきます。
+         GET 側がこれを見て、アプリに一度だけヒントとして返します。 */
+      const prev = await env.MAIL.get("box");
       await env.MAIL.put("box", body, { expirationTtl: TTL });
+      if (prev != null) await env.MAIL.put("box:replaced", "1", { expirationTtl: TTL });
       return new Response("ok", {
         status: 200,
         headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8" },
@@ -85,13 +92,18 @@ export default {
          伝わるまで最大60秒ほどかかります。だから稀に同じ便が二度渡ること
          があります——アプリ側は同じ日の同じ種類を差し替えるので、二度
          入っても記録は増えません。ここは「たいてい一度」で足ります。 */
+      const replaced = await env.MAIL.get("box:replaced");
       await env.MAIL.delete("box");
+      if (replaced != null) await env.MAIL.delete("box:replaced");
       return new Response(body, {
         status: 200,
         headers: {
           ...CORS,
           "Content-Type": "text/plain; charset=utf-8",
           "Cache-Control": "no-store",
+          "Access-Control-Expose-Headers": "X-Kn-Replaced",
+          // 前の便が読まれないまま上書きされていたときだけ付けます。
+          ...(replaced != null ? { "X-Kn-Replaced": "1" } : {}),
         },
       });
     }
